@@ -33,4 +33,33 @@ public class ToDoService {
                 savedTodo.getComments()
         );
     }
+
+    public ToDoResponse updateTodo(Long id, ToDoRequest request){
+
+        Todo todo = toDoRepo.findById(id)
+                .orElseThrow(()-> new RuntimeException("Todo not found with ID: " + request.getId()));
+
+        todo.setName(request.getName());
+        todo.setDescription(request.getDescription());
+        todo.setPriority(request.getPriority());
+        todo.setStatus(request.getStatus());
+        todo.setComments(request.getComments());
+
+        Todo updatedTodo = toDoRepo.save(todo);
+
+        return new ToDoResponse(
+                updatedTodo.getName(),
+                updatedTodo.getDescription(),
+                updatedTodo.getStatus(),
+                updatedTodo.getPriority(),
+                updatedTodo.getComments()
+        );
+    }
+
+    public void deleteTodo(Long id){
+       if (!toDoRepo.existsById(id)){
+           throw new RuntimeException("Todo not found with ID: " + id);
+       }
+       toDoRepo.deleteById(id);
+    }
 }
