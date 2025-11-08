@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Field;
 
 import java.security.Key;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,32 @@ public class ToDoService {
         );
     }
 
+    public List<ToDoResponse> getAllTodos(){
+        return toDoRepo.findAll()
+                .stream()
+                .map(todo -> new ToDoResponse(
+                        todo.getName(),
+                        todo.getDescription(),
+                        todo.getStatus(),
+                        todo.getPriority(),
+                        todo.getComments()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public ToDoResponse getOneTodo(Long id){
+        Todo todo = toDoRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Todo not found with ID: " + id));
+
+        return new ToDoResponse(
+                todo.getName(),
+                todo.getDescription(),
+                todo.getStatus(),
+                todo.getPriority(),
+                todo.getComments()
+        );
+    }
+
     public ToDoResponse updateTodo(Long id, ToDoRequest request){
 
         Todo todo = toDoRepo.findById(id)
@@ -60,41 +88,6 @@ public class ToDoService {
                 updatedTodo.getComments()
         );
     }
-
-    public ToDoResponse partialUpdate(Long id, Map<String, Object> updates) {
-        Todo todo = toDoRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Todo not found with ID: " + id));
-
-        updates.forEach((fieldName, value) -> {
-            try {
-                Field field = Todo.class.getDeclaredField(fieldName);
-                field.setAccessible(true);
-
-                if (field.getType().isEnum()) {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends Enum> enumType = (Class<? extends Enum>) field.getType();
-                    Object enumValue = Enum.valueOf(enumType, value.toString());
-                    field.set(todo, enumValue);
-                } else {
-                    field.set(todo, value);
-                }
-
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Invalid field: " + fieldName);
-            }
-        });
-
-        Todo updatedTodo = toDoRepo.save(todo);
-
-        return new ToDoResponse(
-                updatedTodo.getName(),
-                updatedTodo.getDescription(),
-                updatedTodo.getStatus(),
-                updatedTodo.getPriority(),
-                updatedTodo.getComments()
-        );
-    }
-
 
     public void deleteTodo(Long id){
        if (!toDoRepo.existsById(id)){

@@ -7,6 +7,8 @@ import max_code.todolist.Service.ToDoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("api/v1/todo")
 @RequiredArgsConstructor
@@ -28,6 +30,16 @@ public class ToDoController {
     public ResponseEntity<ToDoResponse> deleteTodo(@PathVariable Long id){
         toDoService.deleteTodo(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("all")
+    public ResponseEntity<List<ToDoResponse>> getAllTodos(){
+        return ResponseEntity.ok(toDoService.getAllTodos());
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<ToDoResponse> getOneTodo(Long id){
+        return ResponseEntity.ok(toDoService.getOneTodo(id));
     }
 
 }
