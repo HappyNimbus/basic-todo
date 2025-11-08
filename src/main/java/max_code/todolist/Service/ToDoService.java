@@ -6,7 +6,12 @@ import max_code.todolist.DTO.ToDoResponse;
 import max_code.todolist.Entities.Todo;
 import max_code.todolist.Enums.Status;
 import max_code.todolist.Repo.ToDoRepo;
+import max_code.todolist.TodolistApplication;
 import org.springframework.stereotype.Service;
+import java.lang.reflect.Field;
+
+import java.security.Key;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +60,41 @@ public class ToDoService {
                 updatedTodo.getComments()
         );
     }
+
+    public ToDoResponse partialUpdate(Long id, Map<String, Object> updates) {
+        Todo todo = toDoRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Todo not found with ID: " + id));
+
+        updates.forEach((fieldName, value) -> {
+            try {
+                Field field = Todo.class.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                if (field.getType().isEnum()) {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Enum> enumType = (Class<? extends Enum>) field.getType();
+                    Object enumValue = Enum.valueOf(enumType, value.toString());
+                    field.set(todo, enumValue);
+                } else {
+                    field.set(todo, value);
+                }
+
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Invalid field: " + fieldName);
+            }
+        });
+
+        Todo updatedTodo = toDoRepo.save(todo);
+
+        return new ToDoResponse(
+                updatedTodo.getName(),
+                updatedTodo.getDescription(),
+                updatedTodo.getStatus(),
+                updatedTodo.getPriority(),
+                updatedTodo.getComments()
+        );
+    }
+
 
     public void deleteTodo(Long id){
        if (!toDoRepo.existsById(id)){
